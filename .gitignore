@@ -2,3 +2,4 @@
 .venv-py311
 .venv-py3.11
 phase1_text_baseline/data/train.csv
+phase2_multilingual/data/train.csv
