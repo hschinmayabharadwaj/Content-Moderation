@@ -32,6 +32,19 @@ echo "  Config file: $CONFIG_FILE"
 echo "  Data directory: $DATA_DIR"
 echo "  Use sample: $USE_SAMPLE"
 
+# Resolve Python interpreter (Windows venvs expose "python", not "python3")
+if [[ -n "$PYTHON" && -x "$PYTHON" ]]; then
+    :
+elif command -v python >/dev/null 2>&1; then
+    PYTHON="$(command -v python)"
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON="$(command -v python3)"
+else
+    echo -e "\n${RED}ERROR: Python not found${NC}"
+    echo "Activate the project venv or set PYTHON to your interpreter path."
+    exit 1
+fi
+
 # Prefer the repository venv when the script is launched from a shell without
 # an activated environment. This keeps the phase launcher on the interpreter
 # that already has the project dependencies installed.
@@ -41,6 +54,10 @@ if [[ -z "$VIRTUAL_ENV" ]]; then
             # shellcheck disable=SC1090
             source "$candidate/bin/activate"
             break
+        elif [[ -f "$candidate/Scripts/activate" ]]; then
+            # shellcheck disable=SC1090
+            source "$candidate/Scripts/activate"
+            break
         fi
     done
 fi
@@ -48,8 +65,8 @@ fi
 if [[ -z "$VIRTUAL_ENV" ]]; then
     echo -e "\n${RED}WARNING: Virtual environment not activated${NC}"
     echo "It's recommended to use a virtual environment."
-    echo "Create one with: python3 -m venv venv"
-    echo "Activate with: source venv/bin/activate"
+    echo "Create one with: python -m venv venv"
+    echo "Activate with: source venv/Scripts/activate  (Windows) or source venv/bin/activate  (Linux/macOS)"
     read -p "Continue anyway? (y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -66,16 +83,16 @@ if [ -f "$DATA_DIR/train.csv" ]; then
     read -p "Re-download? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        python3 download_data.py --output-dir "$DATA_DIR" --analyze
+        "$PYTHON" download_data.py --output-dir "$DATA_DIR" --analyze
     fi
 else
-    python3 download_data.py --output-dir "$DATA_DIR" --analyze
+    "$PYTHON" download_data.py --output-dir "$DATA_DIR" --analyze
 fi
 
 # Create sample dataset if requested
 if [ "$USE_SAMPLE" = true ]; then
     echo -e "\n${YELLOW}Creating sample dataset...${NC}"
-    python3 download_data.py --output-dir "$DATA_DIR" --create-sample --sample-size 5000
+    "$PYTHON" download_data.py --output-dir "$DATA_DIR" --create-sample --sample-size 5000
     
     # Update config to use sample
     if command -v yq &> /dev/null; then
@@ -98,10 +115,10 @@ if [ -f "models/best_model.pt" ]; then
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Skipping training..."
     else
-        python3 train_classifier.py --config "$CONFIG_FILE"
+        "$PYTHON" train_classifier.py --config "$CONFIG_FILE"
     fi
 else
-    python3 train_classifier.py --config "$CONFIG_FILE"
+    "$PYTHON" train_classifier.py --config "$CONFIG_FILE"
 fi
 
 # Check if training completed successfully
@@ -121,7 +138,7 @@ echo -e "${GREEN}✓ Training complete${NC}"
 echo -e "\n${GREEN}Step 3: Calibrating Thresholds (Step 1.2)${NC}"
 echo "=========================================="
 
-python3 calibrate_thresholds.py --config "$CONFIG_FILE"
+"$PYTHON" calibrate_thresholds.py --config "$CONFIG_FILE"
 
 # Check if calibration completed successfully
 if [ ! -f "models/calibration/calibration_results.json" ]; then
