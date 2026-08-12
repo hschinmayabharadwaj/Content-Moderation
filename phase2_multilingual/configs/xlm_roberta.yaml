@@ -1,0 +1,63 @@
+# Phase 2: XLM-RoBERTa Multilingual Classifier Configuration
+
+# Model Configuration
+model:
+  name: "xlm-roberta-base"  # 270M parameters, 100+ languages
+  max_length: 512
+  dropout: 0.1
+  hidden_size: 256
+  use_language_adapter: false  # Language-specific adapter layers (experimental)
+
+# Training Configuration
+training:
+  # Data
+  data_dir: "data"
+  
+  # Hyperparameters
+  batch_size: 16
+  learning_rate: 2.0e-5
+  num_epochs: 5
+  warmup_steps: 500
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  
+  # Optimizer & Scheduler
+  optimizer: "adamw"
+  scheduler: "linear"
+  
+  # Hardware
+  device: "cuda"  # Options: cuda, cpu, mps
+  mixed_precision: true
+  num_workers: 4
+  pin_memory: true
+  
+  # Checkpointing
+  save_dir: "models"
+  save_strategy: "best"
+  save_total_limit: 3
+  load_best_at_end: true
+  
+  # Evaluation
+  eval_strategy: "epoch"
+  eval_steps: 500
+  logging_steps: 100
+  
+  # Early stopping
+  early_stopping: true
+  early_stopping_patience: 3
+  early_stopping_metric: "f1"
+
+# Language Configuration
+languages:
+  supported: ["english", "hindi", "tamil", "telugu", "kannada", "bengali"]
+  code_mixed: ["hinglish", "tanglish", "tenglish", "kanglish"]
+
+# Experiment Tracking
+tracking:
+  use_wandb: false
+  project_name: "content-moderation-phase2"
+  experiment_name: "xlm-roberta-multilingual"
+  log_model: true
+
+# Seed for reproducibility
+seed: 42
