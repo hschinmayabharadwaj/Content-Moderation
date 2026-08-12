@@ -24,7 +24,7 @@ training:
   use_sample: false  # Use train_sample.csv for quick experiments
   
   # Hyperparameters
-  batch_size: 16
+  batch_size: 8
   learning_rate: 2.0e-5
   num_epochs: 5
   warmup_steps: 500
@@ -49,10 +49,10 @@ training:
     random_swap: false
     random_deletion: false
   
-  # Hardware
-  device: "cuda"  # Options: cuda, cpu, mps (for Apple Silicon)
-  mixed_precision: true  # Use automatic mixed precision (AMP)
-  num_workers: 4
+  # Hardware (RTX 4060 — 8 GB VRAM)
+  device: "cuda"
+  mixed_precision: true
+  num_workers: 2
   pin_memory: true
   
   # Checkpointing

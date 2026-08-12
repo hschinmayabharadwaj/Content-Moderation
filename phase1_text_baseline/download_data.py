@@ -129,14 +129,16 @@ def create_sample_dataset(output_dir: str = "./data", sample_size: int = 10000):
     existing_labels = [col for col in label_cols if col in train_df.columns]
     
     if existing_labels:
-        # Sample with stratification based on toxicity
-        train_df['is_toxic'] = train_df[existing_labels].sum(axis=1) > 0
-        sample_df = train_df.groupby('is_toxic', group_keys=False).apply(
-            lambda x: x.sample(min(len(x), sample_size // 2), random_state=42)
-        )
-        sample_df = sample_df.drop('is_toxic', axis=1)
+        work_df = train_df.copy()
+        work_df['is_toxic'] = work_df[existing_labels].sum(axis=1) > 0
+        per_group = max(1, sample_size // 2)
+        samples = []
+        for _, group in work_df.groupby('is_toxic'):
+            samples.append(group.sample(min(len(group), per_group), random_state=42))
+        sample_df = pd.concat(samples, ignore_index=True)
+        sample_df = sample_df.drop(columns='is_toxic', errors='ignore')
     else:
-        sample_df = train_df.sample(sample_size, random_state=42)
+        sample_df = train_df.sample(min(sample_size, len(train_df)), random_state=42)
     
     sample_df.to_csv(output_path / "train_sample.csv", index=False)
     logger.info(f"Sample dataset saved to {output_path / 'train_sample.csv'}")
