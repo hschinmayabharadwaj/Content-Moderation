@@ -1,0 +1,114 @@
+# Phase 1: Baseline Text Classifier Configuration
+
+# Model Configuration
+model:
+  name: "roberta-base"  # Options: bert-base-uncased, roberta-base, distilbert-base-uncased
+  num_labels: 6
+  dropout: 0.1
+  max_length: 512
+  
+  # Fine-tuning strategy
+  freeze_embeddings: false
+  freeze_encoder_layers: 0  # Number of layers to freeze from the beginning (0 = fine-tune all)
+  
+  # Classification head
+  hidden_size: 256
+  use_intermediate_layer: true  # Add intermediate layer in classification head
+
+# Training Configuration
+training:
+  # Data
+  train_file: "data/train.csv"
+  validation_file: "data/validation.csv"
+  test_file: "data/test.csv"
+  use_sample: false  # Use train_sample.csv for quick experiments
+  
+  # Hyperparameters
+  batch_size: 16
+  learning_rate: 2.0e-5
+  num_epochs: 5
+  warmup_steps: 500
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  
+  # Optimizer
+  optimizer: "adamw"  # Options: adamw, adam, sgd
+  scheduler: "linear"  # Options: linear, cosine, constant
+  
+  # Class imbalance handling
+  use_class_weights: true
+  focal_loss: false  # Use focal loss instead of BCE
+  focal_alpha: 0.25
+  focal_gamma: 2.0
+  
+  # Data augmentation
+  use_augmentation: true
+  augmentation:
+    synonym_replacement: true
+    random_insertion: false
+    random_swap: false
+    random_deletion: false
+  
+  # Hardware
+  device: "cuda"  # Options: cuda, cpu, mps (for Apple Silicon)
+  mixed_precision: true  # Use automatic mixed precision (AMP)
+  num_workers: 4
+  pin_memory: true
+  
+  # Checkpointing
+  save_dir: "phase1_text_baseline/models"
+  save_strategy: "best"  # Options: best, epoch, steps
+  save_total_limit: 3
+  load_best_at_end: true
+  
+  # Evaluation
+  eval_strategy: "epoch"  # Options: epoch, steps
+  eval_steps: 500
+  logging_steps: 100
+  
+  # Early stopping
+  early_stopping: true
+  early_stopping_patience: 3
+  early_stopping_metric: "eval_loss"
+
+# Label Configuration
+labels:
+  names: ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
+  text_column: "comment_text"
+
+# Metrics Configuration
+metrics:
+  track: ["accuracy", "precision", "recall", "f1", "auc_roc"]
+  threshold: 0.5  # Default threshold for binary classification
+  
+# Experiment Tracking
+tracking:
+  use_wandb: false  # Set to true if you have wandb account
+  project_name: "content-moderation-phase1"
+  experiment_name: "baseline-roberta"
+  log_model: true
+
+# Seed for reproducibility
+seed: 42
+
+# Calibration (Step 1.2)
+calibration:
+  method: "temperature_scaling"  # Options: temperature_scaling, platt_scaling, isotonic
+  validation_split: 0.2  # Use this portion of validation set for calibration
+  n_bins: 15  # Number of bins for reliability diagram
+  
+# Thresholds (Step 1.2)
+thresholds:
+  optimization_metric: "f1"  # Metric to optimize when finding thresholds
+  search_method: "grid"  # Options: grid, bayesian
+  search_range: [0.1, 0.9]
+  search_steps: 50
+  
+  # Enforcement tiers
+  tiers:
+    auto_remove:
+      target_precision: 0.95  # High precision to avoid false positives
+    human_review:
+      target_recall: 0.85  # Balance between catching toxic content and workload
+    auto_approve:
+      target_precision: 0.98  # Very high confidence in safe content
