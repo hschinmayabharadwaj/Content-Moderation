@@ -1,0 +1,51 @@
+# Colab-optimized Phase 2 config (T4 GPU, ~30-50 min with 5K sample)
+
+model:
+  name: "xlm-roberta-base"
+  max_length: 256
+  dropout: 0.1
+  hidden_size: 256
+  use_language_adapter: false
+
+training:
+  data_dir: "data"
+
+  batch_size: 16
+  learning_rate: 3.0e-5
+  num_epochs: 2
+  warmup_steps: 100
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  optimizer: "adamw"
+  scheduler: "linear"
+
+  device: "cuda"
+  mixed_precision: true
+  num_workers: 2
+  pin_memory: true
+
+  save_dir: "models"
+  save_strategy: "best"
+  save_total_limit: 2
+  load_best_at_end: true
+
+  eval_strategy: "epoch"
+  eval_steps: 500
+  logging_steps: 50
+
+  early_stopping: true
+  early_stopping_patience: 2
+  early_stopping_metric: "f1"
+
+languages:
+  supported: ["english", "hindi", "tamil", "telugu", "kannada", "bengali"]
+  code_mixed: ["hinglish", "tanglish", "tenglish", "kanglish"]
+
+tracking:
+  use_wandb: false
+  project_name: "content-moderation-phase2"
+  experiment_name: "colab-multilingual"
+  log_model: false
+
+seed: 42
