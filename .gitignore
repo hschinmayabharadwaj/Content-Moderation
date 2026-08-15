@@ -1,5 +1,59 @@
+# Virtual environments
 .venv
 .venv-py311
 .venv-py3.11
-phase1_text_baseline/data/train.csv
-phase2_multilingual/data/train.csv
+venv/
+
+# Large data files
+phase1_text_baseline/data/
+phase2_multilingual/data/
+phase3_vision_ocr/data/
+phase3_vision_ocr/test_images/
+
+# Trained models (too large)
+phase1_text_baseline/models/
+phase2_multilingual/models/
+phase3_vision_ocr/models/
+
+# Training outputs
+*.pt
+*.pth
+*.checkpoint
+logs/
+*.log
+
+# Generated files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.DS_Store
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Weights & Biases
+wandb/
+
+# Visualizations (keep small ones)
+*.png
+*.jpg
+*.jpeg
+visualizations/
+
+# Cache
+.cache/
+*.cache

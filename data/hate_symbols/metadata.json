@@ -1,0 +1,20 @@
+{
+  "dataset": "Hateful Memes",
+  "categories": [
+    "no_hate",
+    "hate"
+  ],
+  "num_classes": 2,
+  "splits": {
+    "train": {
+      "no_hate": 200,
+      "hate": 200
+    },
+    "test": {
+      "no_hate": 40,
+      "hate": 40
+    }
+  },
+  "type": "dummy",
+  "description": "Hate speech detection in memes and images"
+}

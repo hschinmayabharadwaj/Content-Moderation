@@ -1,0 +1,44 @@
+# Phase 3: Vision & OCR Requirements
+
+# Core ML
+torch>=2.0.0
+torchvision>=0.15.0
+timm>=0.9.0  # PyTorch Image Models for modern architectures
+
+# OCR Libraries
+easyocr>=1.7.0  # Primary OCR engine (GPU-accelerated)
+pytesseract>=0.3.10  # Fallback OCR engine
+Pillow>=10.0.0  # Image processing
+
+# Image Processing
+opencv-python>=4.8.0  # Advanced image preprocessing
+scikit-image>=0.21.0  # Image enhancement
+albumentations>=1.3.0  # Data augmentation for training
+
+# Computer Vision Utilities
+imagehash>=4.3.0  # Perceptual hashing for duplicate detection
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Text Processing (integrate with existing phases)
+transformers>=4.30.0
+sentencepiece>=0.1.99  # For XLM-RoBERTa tokenization
+
+# Training & Evaluation
+scikit-learn>=1.3.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+tqdm>=4.65.0
+
+# Configuration
+pyyaml>=6.0
+omegaconf>=2.3.0  # Advanced config management
+
+# Model Serving & Web UI
+gradio>=3.50.0  # Interactive web interface
+streamlit>=1.28.0  # Alternative dashboard
+
+# Utilities
+requests>=2.31.0  # For downloading datasets
+datasets>=2.14.0  # HuggingFace datasets

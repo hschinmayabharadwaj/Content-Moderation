@@ -1,0 +1,139 @@
+# Phase 3: Vision & OCR Configuration
+
+# OCR Settings
+ocr:
+  primary_engine: "easyocr"  # easyocr, tesseract, or paddle
+  fallback_engine: "tesseract"
+  languages: ["en"]  # Languages to detect
+  gpu: true  # Use GPU if available
+  batch_size: 8
+  
+  # Preprocessing
+  preprocessing:
+    grayscale: true
+    contrast_enhancement: true
+    denoise: true
+    deskew: true
+    resize_max: 1920  # Max dimension before processing
+  
+  # Text filtering
+  min_text_length: 3  # Minimum characters to consider
+  min_confidence: 0.3  # Minimum OCR confidence score
+  
+  # Post-processing
+  spell_check: false  # Enable spell checking (slower)
+  remove_special_chars: false
+
+# Image Classification Settings
+image_classification:
+  # Model architecture
+  model:
+    backbone: "resnet50"  # resnet50, efficientnet_b0, vit_base_patch16_224
+    pretrained: true
+    num_classes:
+      nsfw: 2  # safe, nsfw
+      hate_symbols: 2  # no_hate, hate
+      violence: 2  # no_violence, violence
+    
+  # Training
+  training:
+    epochs: 20
+    batch_size: 32
+    learning_rate: 0.0001
+    weight_decay: 0.0001
+    optimizer: "adamw"
+    scheduler: "cosine"
+    warmup_epochs: 2
+    
+    # Data augmentation
+    augmentation:
+      random_rotation: 15
+      random_flip: true
+      color_jitter: true
+      random_crop: true
+    
+    # Class imbalance
+    weighted_loss: true
+    focal_loss: true
+    focal_alpha: 0.25
+    focal_gamma: 2.0
+  
+  # Inference
+  inference:
+    threshold_nsfw: 0.7
+    threshold_hate: 0.6
+    threshold_violence: 0.65
+    tta: false  # Test-time augmentation
+    ensemble: false  # Ensemble multiple models
+
+# Multimodal Fusion
+fusion:
+  mode: "late"  # early, late, or attention
+  
+  # Weighting for final decision
+  weights:
+    text_score: 0.6  # Weight for OCR text moderation
+    image_score: 0.4  # Weight for image classification
+  
+  # Decision thresholds
+  thresholds:
+    auto_remove: 0.85  # High confidence toxic
+    human_review: 0.5  # Borderline cases
+    auto_approve: 0.3  # High confidence safe
+
+# Data Paths
+data:
+  # Training datasets
+  datasets:
+    nsfw:
+      path: "data/nsfw"
+      train_split: 0.8
+    hate_symbols:
+      path: "data/hate_symbols"
+      train_split: 0.8
+    violence:
+      path: "data/violence"
+      train_split: 0.8
+  
+  # Test images
+  test_images: "test_images"
+  
+  # Output paths
+  output:
+    models: "models"
+    logs: "logs"
+    visualizations: "visualizations"
+
+# Integration with Phase 1 & 2
+integration:
+  phase1_model_path: "../phase1_text_baseline/models/best_model.pt"
+  phase2_model_path: "../phase2_multilingual/models/best_model.pt"
+  use_phase1: true
+  use_phase2: true
+
+# Evaluation
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1"
+    - "auc_roc"
+    - "confusion_matrix"
+  
+  save_predictions: true
+  save_visualizations: true
+
+# Performance
+performance:
+  num_workers: 4  # DataLoader workers
+  pin_memory: true
+  mixed_precision: true  # Use AMP for faster training
+
+# Logging
+logging:
+  level: "INFO"
+  save_to_file: true
+  log_file: "logs/phase3.log"
+  wandb: false  # Weights & Biases integration
+  tensorboard: false

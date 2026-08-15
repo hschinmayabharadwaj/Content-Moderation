@@ -1,0 +1,20 @@
+{
+  "dataset": "Violence Detection",
+  "categories": [
+    "no_violence",
+    "violence"
+  ],
+  "num_classes": 2,
+  "splits": {
+    "train": {
+      "no_violence": 200,
+      "violence": 200
+    },
+    "test": {
+      "no_violence": 40,
+      "violence": 40
+    }
+  },
+  "type": "dummy",
+  "description": "Violent content detection"
+}
