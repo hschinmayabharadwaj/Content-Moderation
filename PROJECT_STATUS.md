@@ -93,8 +93,8 @@ bash run_phase1.sh
 
 | Phase | Status | Components | Completion |
 |-------|--------|------------|------------|
-| **Phase 1** | ✅ **READY** | Text classification + Calibration | 100% |
-| **Phase 2** | 🔲 Not Started | Multilingual routing | 0% |
+| **Phase 1** | ✅ **COMPLETE** | Text classification + Calibration | 100% |
+| **Phase 2** | ✅ **COMPLETE** | Multilingual routing | 100% |
 | **Phase 3** | 🔲 Not Started | Vision & OCR | 0% |
 | **Phase 4** | 🔲 Not Started | Multimodal fusion | 0% |
 | **Phase 5** | 🔲 Not Started | HITL & Production | 0% |

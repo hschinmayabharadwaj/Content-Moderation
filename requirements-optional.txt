@@ -1,0 +1,6 @@
+# Optional packages that require a C++ compiler on Windows (Visual Studio Build Tools),
+# or have dependency constraints incompatible with Python 3.13.
+# Install only when needed and your environment supports them:
+#   pip install -r requirements-optional.txt
+fasttext-wheel>=0.9.2
+alibi-detect>=0.11.4
