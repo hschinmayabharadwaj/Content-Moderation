@@ -91,7 +91,8 @@ class MultilingualDatasetPreparer:
         for i in range(size):
             # Choose toxic or neutral
             category = np.random.choice(['toxic', 'neutral'], p=[0.3, 0.7])
-            template, label = np.random.choice(templates[category])
+            category_templates = templates[category]
+            template, label = category_templates[np.random.randint(len(category_templates))]
             
             # Fill in template
             text = template
@@ -421,7 +422,7 @@ def main():
         train_df, val_df = preparer.create_train_val_split(combined_df)
         
         print("\n" + "="*60)
-        print("✓ Dataset Preparation Complete")
+        print("Dataset Preparation Complete")
         print("="*60)
         print(f"\nReady to train Phase 2 model!")
         print(f"Training data: {len(train_df)} examples")

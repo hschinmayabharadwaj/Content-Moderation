@@ -24,6 +24,25 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _positive_class_metrics(report: Dict) -> Dict[str, float]:
+    """Extract metrics for the positive class from a sklearn classification report."""
+    for key in ('1', 1, '1.0', 1.0):
+        if key in report:
+            positive = report[key]
+            return {
+                'precision': float(positive['precision']),
+                'recall': float(positive['recall']),
+                'f1': float(positive['f1-score']),
+            }
+
+    macro = report.get('macro avg', {})
+    return {
+        'precision': float(macro.get('precision', 0.0)),
+        'recall': float(macro.get('recall', 0.0)),
+        'f1': float(macro.get('f1-score', 0.0)),
+    }
+
+
 class MultilingualEvaluator:
     """
     Comprehensive evaluation for multilingual content moderation.
@@ -62,6 +81,10 @@ class MultilingualEvaluator:
         """
         if language_names is None:
             language_names = list(set(languages))
+
+        y_true = np.asarray(y_true).astype(np.int64).ravel()
+        y_pred = np.asarray(y_pred).astype(np.int64).ravel()
+        y_prob = np.asarray(y_prob).astype(np.float64).ravel()
         
         results = {}
         
@@ -84,23 +107,28 @@ class MultilingualEvaluator:
             # Classification report
             report = classification_report(
                 lang_true, lang_pred,
+                labels=[0, 1],
                 output_dict=True,
                 zero_division=0
             )
+            positive_metrics = _positive_class_metrics(report)
+            
+            # Overall accuracy from the report
+            accuracy = report.get('accuracy', 0.0)
             
             # AUC
             try:
                 lang_auc = auc(*roc_curve(lang_true, lang_prob)[:2])
-            except:
+            except ValueError:
                 lang_auc = 0.0
             
             results[lang] = {
                 'count': int(lang_mask.sum()),
                 'positive_count': int(lang_true.sum()),
-                'accuracy': report['accuracy'],
-                'precision': report['1']['precision'],
-                'recall': report['1']['recall'],
-                'f1': report['1']['f1-score'],
+                'accuracy': accuracy,
+                'precision': positive_metrics['precision'],
+                'recall': positive_metrics['recall'],
+                'f1': positive_metrics['f1'],
                 'auc': float(lang_auc)
             }
         
@@ -373,12 +401,12 @@ def main():
     
     # Load data
     y_prob = np.load(args.predictions)
-    y_true = np.load(args.labels)
+    y_true = np.load(args.labels).astype(np.int64).ravel()
     
-    with open(args.languages, 'r') as f:
+    with open(args.languages, 'r', encoding='utf-8') as f:
         languages = json.load(f)
     
-    y_pred = (y_prob > 0.5).astype(int)
+    y_pred = (y_prob > 0.5).astype(np.int64)
     
     # Evaluate
     evaluator = MultilingualEvaluator(args.output_dir)

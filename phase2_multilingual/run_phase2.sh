@@ -157,7 +157,7 @@ import json
 import numpy as np
 
 # Load validation data to get languages
-val_df = pd.read_csv('$DATA_DIR/multilingual_val_split.csv')
+val_df = pd.read_csv('data/multilingual_val_split.csv')
 languages = val_df['language'].tolist()
 
 with open('models/val_languages.json', 'w') as f:

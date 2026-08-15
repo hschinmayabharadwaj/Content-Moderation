@@ -232,6 +232,27 @@ def calculate_class_weights(labels: np.ndarray) -> torch.Tensor:
     return torch.FloatTensor(weights)
 
 
+def binarize_labels(
+    labels: np.ndarray,
+    threshold: float = 0.5
+) -> np.ndarray:
+    """Convert soft/crowd-sourced label scores to hard 0/1 targets."""
+    labels = np.asarray(labels, dtype=np.float32)
+    if labels.size == 0:
+        return labels
+
+    unique_values = np.unique(labels[~np.isnan(labels)])
+    if len(unique_values) > 2 or np.any(
+        (unique_values != 0) & (unique_values != 1)
+    ):
+        logger.warning(
+            "Detected non-binary label values (e.g. crowd proportions). "
+            f"Binarizing with threshold={threshold}."
+        )
+
+    return (labels >= threshold).astype(np.float32)
+
+
 def prepare_data(
     df: pd.DataFrame,
     config: Dict,
@@ -241,9 +262,13 @@ def prepare_data(
     
     text_col = config['labels']['text_column']
     label_cols = config['labels']['names']
+    label_threshold = config.get('metrics', {}).get('threshold', 0.5)
     
     texts = df[text_col].fillna('').tolist()
-    labels = df[label_cols].values.astype(np.float32)
+    labels = binarize_labels(
+        df[label_cols].values,
+        threshold=label_threshold
+    )
     
     dataset = ToxicCommentDataset(
         texts=texts,
@@ -354,15 +379,16 @@ def evaluate(
         
         logits = outputs['logits']
         probs = torch.sigmoid(logits)
-        preds = (probs > 0.5).float()
+        preds = (probs > 0.5).long()
         
         all_preds.append(preds.cpu().numpy())
         all_labels.append(labels.cpu().numpy())
         all_logits.append(probs.cpu().numpy())
     
-    all_preds = np.vstack(all_preds)
+    all_preds = np.vstack(all_preds).astype(np.int64)
     all_labels = np.vstack(all_labels)
     all_logits = np.vstack(all_logits)
+    all_labels_bin = binarize_labels(all_labels).astype(np.int64)
     
     # Calculate metrics
     metrics = {}
@@ -370,7 +396,7 @@ def evaluate(
     # Per-label metrics
     for i, label_name in enumerate(label_names):
         label_preds = all_preds[:, i]
-        label_labels = all_labels[:, i]
+        label_labels = all_labels_bin[:, i]
         label_logits = all_logits[:, i]
         
         precision, recall, f1, _ = precision_recall_fscore_support(
@@ -379,7 +405,7 @@ def evaluate(
         
         try:
             auc = roc_auc_score(label_labels, label_logits)
-        except:
+        except ValueError:
             auc = 0.0
         
         metrics[f'{label_name}_precision'] = precision
@@ -389,12 +415,12 @@ def evaluate(
     
     # Overall metrics (micro-average)
     precision, recall, f1, _ = precision_recall_fscore_support(
-        all_labels.ravel(), all_preds.ravel(), average='binary', zero_division=0
+        all_labels_bin.ravel(), all_preds.ravel(), average='binary', zero_division=0
     )
     
     try:
-        auc = roc_auc_score(all_labels, all_logits, average='macro')
-    except:
+        auc = roc_auc_score(all_labels_bin, all_logits, average='macro')
+    except ValueError:
         auc = 0.0
     
     metrics['overall_precision'] = precision
@@ -404,7 +430,7 @@ def evaluate(
     
     # Save predictions for calibration (Step 1.2)
     metrics['predictions'] = all_logits
-    metrics['labels'] = all_labels
+    metrics['labels'] = all_labels_bin
     
     return metrics
 

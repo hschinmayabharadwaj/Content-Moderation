@@ -45,6 +45,20 @@ def download_jigsaw_dataset(output_dir: str = "./data"):
         logger.info(f"\nColumns: {train_df.columns.tolist()}")
         logger.info(f"\nFirst few rows:\n{train_df.head()}")
         
+        # Binarize soft crowd-sourced scores (e.g. 0.33, 0.5) to 0/1 labels
+        label_cols = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        existing_labels = [col for col in label_cols if col in train_df.columns]
+        for label_col in existing_labels:
+            train_df[label_col] = (train_df[label_col] >= 0.5).astype(int)
+        if validation_df is not None:
+            for label_col in existing_labels:
+                if label_col in validation_df.columns:
+                    validation_df[label_col] = (validation_df[label_col] >= 0.5).astype(int)
+        if test_df is not None:
+            for label_col in existing_labels:
+                if label_col in test_df.columns:
+                    test_df[label_col] = (test_df[label_col] >= 0.5).astype(int)
+
         # Save to CSV for easy inspection
         train_df.to_csv(output_path / "train.csv", index=False)
         logger.info(f"Saved training data to {output_path / 'train.csv'}")
