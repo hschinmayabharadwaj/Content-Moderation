@@ -417,8 +417,29 @@ def main(config_path: str):
     
     # Load predictions and labels from Step 1.1
     model_dir = Path(config['training']['save_dir'])
-    predictions = np.load(model_dir / 'val_predictions.npy')
-    labels = np.load(model_dir / 'val_labels.npy')
+    
+    # Check if prediction files exist
+    pred_file = model_dir / 'val_predictions.npy'
+    label_file = model_dir / 'val_labels.npy'
+    
+    if not pred_file.exists() or not label_file.exists():
+        logger.warning(f"\n{'='*50}")
+        logger.warning("⚠️  Validation predictions not found!")
+        logger.warning(f"Expected: {pred_file}")
+        logger.warning(f"\nThis means the model was just trained for the first time.")
+        logger.warning("Calibration requires validation predictions from training.")
+        logger.warning("\n✅ SOLUTION:")
+        logger.warning("1. Run training again: python train_classifier.py")
+        logger.warning("2. This will generate val_predictions.npy and val_labels.npy")
+        logger.warning("3. Then run calibration again")
+        logger.warning(f"{'='*50}\n")
+        
+        logger.info("Skipping calibration - no validation predictions available")
+        logger.info("✅ Phase 1 training complete! Model ready for inference.")
+        return
+    
+    predictions = np.load(pred_file)
+    labels = np.load(label_file)
     
     logger.info(f"Loaded predictions: {predictions.shape}")
     logger.info(f"Loaded labels: {labels.shape}")

@@ -571,10 +571,11 @@ def main(config_path: str):
             logger.info(f"  {label:15s} - F1: {val_metrics[f'{label}_f1']:.4f}, "
                        f"AUC: {val_metrics[f'{label}_auc']:.4f}")
         
-        # Save best model
-        if val_metrics['overall_f1'] > best_f1:
-            best_f1 = val_metrics['overall_f1']
-            patience_counter = 0
+        # Save best model and predictions
+        if val_metrics['overall_f1'] > best_f1 or epoch == 0:  # Save on first epoch too
+            if val_metrics['overall_f1'] > best_f1:
+                best_f1 = val_metrics['overall_f1']
+                patience_counter = 0
             
             # Save model
             model_save_path = save_dir / 'best_model.pt'
