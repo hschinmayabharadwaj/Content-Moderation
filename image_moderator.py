@@ -19,17 +19,23 @@ class ImageModerator:
     def __init__(self, 
                  ocr_device: str = 'auto',
                  image_models_dir: str = None,
-                 fusion_strategy: str = 'weighted'):
+                 fusion_strategy: str = 'weighted',
+                 repo_dir: str = None):
         """
         Initialize image moderator.
         
         Args:
             ocr_device: Device for OCR ('cpu', 'cuda', or 'auto')
-            image_models_dir: Directory with trained image models
+            image_models_dir: Directory with trained image models (auto-detects if None)
             fusion_strategy: How to combine OCR and image signals ('weighted', 'max', 'adaptive')
+            repo_dir: Root of Content-Moderation repo (auto-detects if None)
         """
+        # Auto-detect repo directory
+        if repo_dir is None:
+            repo_dir = self._find_repo_dir()
+        
         if image_models_dir is None:
-            image_models_dir = 'phase3_vision_ocr/models'
+            image_models_dir = Path(repo_dir) / 'phase3_vision_ocr' / 'models'
         
         self.moderator = MultimodalModerator(
             models_dir=Path(image_models_dir),
@@ -40,6 +46,27 @@ class ImageModerator:
         print(f"✅ Initialized Image Moderator")
         print(f"   OCR Device: {ocr_device}")
         print(f"   Fusion Strategy: {fusion_strategy}")
+    
+    @staticmethod
+    def _find_repo_dir():
+        """Auto-detect Content-Moderation repo directory."""
+        # Check current directory
+        if Path('phase3_vision_ocr').exists():
+            return Path.cwd()
+        
+        # Check /content/Content-Moderation (Colab default)
+        if Path('/content/Content-Moderation').exists():
+            return Path('/content/Content-Moderation')
+        
+        # Check home directory
+        home_repo = Path.home() / 'Content' / 'content-moderation-system'
+        if home_repo.exists():
+            return home_repo
+        
+        raise FileNotFoundError(
+            "Could not auto-detect Content-Moderation repo. "
+            "Please provide repo_dir parameter."
+        )
     
     def moderate(self, image_path: str, return_details: bool = False) -> Dict:
         """

@@ -14,21 +14,28 @@ from typing import Dict, List, Tuple
 class TextModerator:
     """Text content moderation using Phase 1 baseline classifier."""
     
-    def __init__(self, model_path: str = None, config_path: str = None):
+    def __init__(self, model_path: str = None, config_path: str = None, repo_dir: str = None):
         """
         Initialize text moderator.
         
         Args:
             model_path: Path to trained model (auto-detects if None)
             config_path: Path to config file (auto-detects if None)
+            repo_dir: Root of Content-Moderation repo (auto-detects if None)
         """
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
+        # Auto-detect repo directory
+        if repo_dir is None:
+            repo_dir = self._find_repo_dir()
+        
+        self.repo_dir = Path(repo_dir)
+        
         # Auto-detect paths
         if model_path is None:
-            model_path = 'phase1_text_baseline/models/best_model.pt'
+            model_path = self.repo_dir / 'phase1_text_baseline' / 'models' / 'best_model.pt'
         if config_path is None:
-            config_path = 'phase1_text_baseline/configs/baseline.yaml'
+            config_path = self.repo_dir / 'phase1_text_baseline' / 'configs' / 'baseline.yaml'
         
         self.model_path = Path(model_path)
         self.config_path = Path(config_path)
@@ -43,6 +50,27 @@ class TextModerator:
         
         # Load model and tokenizer
         self._load_model()
+    
+    @staticmethod
+    def _find_repo_dir():
+        """Auto-detect Content-Moderation repo directory."""
+        # Check current directory
+        if Path('phase1_text_baseline').exists():
+            return Path.cwd()
+        
+        # Check /content/Content-Moderation (Colab default)
+        if Path('/content/Content-Moderation').exists():
+            return Path('/content/Content-Moderation')
+        
+        # Check home directory
+        home_repo = Path.home() / 'Content' / 'content-moderation-system'
+        if home_repo.exists():
+            return home_repo
+        
+        raise FileNotFoundError(
+            "Could not auto-detect Content-Moderation repo. "
+            "Please provide repo_dir parameter."
+        )
     
     def _load_model(self):
         """Load trained model and tokenizer."""
