@@ -172,15 +172,23 @@ class Trainer:
             'categories': self.train_loader.dataset.categories
         }
         
+        # Ensure output directory exists
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        
         # Save latest
         latest_path = self.output_dir / 'latest_model.pt'
         torch.save(checkpoint, latest_path)
+        self.logger.debug(f"📄 Saved latest: {latest_path}")
         
         # Save best
         if is_best:
             best_path = self.output_dir / 'best_model.pt'
             torch.save(checkpoint, best_path)
             self.logger.info(f"✅ Saved best model: {best_path}")
+            # Verify file was saved
+            if best_path.exists():
+                size_mb = best_path.stat().st_size / (1024*1024)
+                self.logger.info(f"   File size: {size_mb:.1f} MB")
     
     def train(self, num_epochs: int):
         """Full training loop"""
@@ -302,7 +310,11 @@ def main():
     # Setup paths
     data_dir = Path(args.data_dir) / args.dataset
     output_dir = Path(args.output_dir) / args.dataset
+    
+    # Ensure output directory exists
     output_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"📁 Output directory: {output_dir.absolute()}")
+    logger.info(f"   Writable: {os.access(str(output_dir), os.W_OK)}")
     
     # Check if data exists
     if not data_dir.exists():
@@ -402,6 +414,33 @@ def main():
     # Train
     print("\n" + "="*80)
     trainer.train(args.epochs)
+    print("="*80 + "\n")
+    
+    # Verify models were saved
+    print("\n" + "="*80)
+    print("📁 MODEL VERIFICATION")
+    print("="*80)
+    
+    best_model = output_dir / 'best_model.pt'
+    latest_model = output_dir / 'latest_model.pt'
+    config_file = output_dir / 'training_config.json'
+    history_file = output_dir / 'training_history.json'
+    
+    print(f"\nOutput directory: {output_dir.absolute()}")
+    print(f"  best_model.pt: {'✅' if best_model.exists() else '❌'} {best_model}")
+    print(f"  latest_model.pt: {'✅' if latest_model.exists() else '❌'} {latest_model}")
+    print(f"  training_config.json: {'✅' if config_file.exists() else '❌'} {config_file}")
+    print(f"  training_history.json: {'✅' if history_file.exists() else '❌'} {history_file}")
+    
+    if best_model.exists():
+        size_mb = best_model.stat().st_size / (1024*1024)
+        print(f"\n✅ Model successfully saved!")
+        print(f"   File: {best_model}")
+        print(f"   Size: {size_mb:.1f} MB")
+    else:
+        print(f"\n❌ ERROR: Model file not found!")
+        print(f"   Expected: {best_model}")
+    
     print("="*80 + "\n")
 
 
