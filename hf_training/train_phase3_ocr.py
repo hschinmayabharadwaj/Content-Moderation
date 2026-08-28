@@ -106,6 +106,23 @@ def char_acc(pred, target):
     return correct / max(1, total)
 
 
+def next_token_acc(model, loader, device):
+    """Teacher-forced next-token accuracy (real measure of learned capacity)."""
+    correct = total = 0
+    with torch.no_grad():
+        for img, tgt in loader:
+            img, tgt = img.to(device), tgt.to(device)
+            out = model(img, tgt, teacher_forcing=True)  # [B,L,V]
+            pred = out.argmax(-1)
+            for p, t in zip(pred, tgt):
+                for a, b in zip(p, t):
+                    if b == 0:
+                        continue
+                    total += 1
+                    correct += int(a == b)
+    return correct / max(1, total)
+
+
 def train():
     torch.manual_seed(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -151,19 +168,20 @@ def train():
                 pred = out.argmax(-1)
                 ca += char_acc(pred, tgt); tot += img.size(0)
         acc = ca / tot
-        print(f"[OCR] epoch {epoch+1}: val_char_acc={acc:.3f}")
-        if acc > best:
-            best = acc
+        nta = next_token_acc(model, val_loader, device)
+        print(f"[OCR] epoch {epoch+1}: greedy_char_acc={acc:.3f} next_token_acc={nta:.3f}")
+        if nta > best:
+            best = nta
             torch.save({"state_dict": model.state_dict(), "arch": "resnet18-gru",
-                        "vocab_size": len(CHARS) + 1, "val_char_acc": acc}, OUT / "best_model.pt")
+                        "vocab_size": len(CHARS) + 1, "val_next_token_acc": nta}, OUT / "best_model.pt")
 
     elapsed = time.time() - start
-    print(f"[OCR] DONE in {elapsed/60:.1f} min, best_char_acc={best:.3f}")
+    print(f"[OCR] DONE in {elapsed/60:.1f} min, best_next_token_acc={best:.3f}")
     with open(OUT / "config.json", "w") as f:
         json.dump({"arch": "resnet18-gru-ocr", "vocab_size": len(CHARS) + 1,
                    "max_len": MAX_LEN, "charset": CHARS,
-                   "best_char_acc": float(best), "train_time_min": round(elapsed/60, 2),
-                   "data": "HF ocr_datasets (subset)"}, f, indent=2)
+                   "best_next_token_acc": float(best), "train_time_min": round(elapsed/60, 2),
+                   "data": "HF ocr_datasets (subset, ASCII texts)"}, f, indent=2)
 
 
 if __name__ == "__main__":
