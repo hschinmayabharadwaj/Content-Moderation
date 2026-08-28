@@ -9,6 +9,7 @@ import json
 import time
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
@@ -25,6 +26,7 @@ os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 CHARS = " abcdefghijklmnopqrstuvwxyz0123456789-.,:;!?'\"%()/+&@"
 C2I = {c: i + 1 for i, c in enumerate(CHARS)}  # 0 = pad
+ALLOWED = set(CHARS)
 
 
 def encode(s):
@@ -40,7 +42,10 @@ class OCRDataset(Dataset):
         self.rows = []
         for p in sorted(DATA.glob("*.jpg")):
             t = p.with_suffix(".txt")
-            self.rows.append((str(p), t.read_text(encoding="utf-8") if t.exists() else ""))
+            if t.exists():
+                txt = t.read_text(encoding="utf-8").lower().strip()
+                if txt and all(c in ALLOWED for c in txt[:MAX_LEN]):
+                    self.rows.append((str(p), txt))
         self.transform = transform
 
     def __len__(self):
@@ -123,15 +128,18 @@ def train():
     model = OCRModel().to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4, weight_decay=1e-4)
     crit = nn.CrossEntropyLoss(ignore_index=0)
-    epochs = 4
+    epochs = 6
     best = 0.0
     start = time.time()
     for epoch in range(epochs):
         model.train()
+        # scheduled sampling: lower teacher-forcing as training progresses
+        tf_prob = max(0.4, 1.0 - 0.12 * epoch)
         for img, tgt in train_loader:
             img, tgt = img.to(device), tgt.to(device)
+            use_tf = bool(np.random.rand() < tf_prob)
             optimizer.zero_grad()
-            out = model(img, tgt, teacher_forcing=True)
+            out = model(img, tgt, teacher_forcing=use_tf)
             loss = crit(out.reshape(-1, out.size(-1)), tgt.reshape(-1))
             loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimizer.step()
 
