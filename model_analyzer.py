@@ -50,6 +50,15 @@ os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
 ROOT = Path(__file__).resolve().parent
 CKPT = ROOT / "trained_hugging_face_models"
 
+# Import scikit-learn BEFORE torch. On Windows, loading sklearn's OpenMP
+# runtime (vcomp140.dll) after torch's (libiomp5md.dll) corrupts the process
+# heap (exit 0xC0000374). transformers pulls sklearn in indirectly, so this
+# ordering avoids the native DLL collision. See requirements.txt.
+try:
+    import sklearn  # noqa: F401
+except Exception:  # pragma: no cover
+    pass
+
 try:
     import torch
     import torch.nn as nn

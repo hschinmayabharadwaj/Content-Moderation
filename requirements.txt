@@ -117,7 +117,8 @@ evidently>=0.4.0
 # alibi-detect moved to requirements-optional.txt (requires numpy<2, incompatible with Python 3.13)
 
 # GPU Monitoring
-pynvml>=11.5.0
+# nvidia-ml-py is the maintained successor of pynvml (torch warns otherwise)
+nvidia-ml-py>=11.5.0
 gpustat>=1.1
 
 # Multi-processing
